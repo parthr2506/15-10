@@ -3,14 +3,15 @@ import getUserPosts from "@/lib/getUserPosts"
 import { Suspense } from "react"
 import UserPosts from "./components/UserPosts"
 import type { Metadata } from 'next'
-
+import getAllUsers from "@/lib/getAllUsers"
 type Params = {
-    params: {
+    params: Promise<{
         userId: string
-    }
+    }>
 }
 
-export async function generateMetadata({ params: { userId } }: Params): Promise<Metadata> {
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+    const { userId } = await params;
     const userData: Promise<User> = getUser(userId)
     const user: User = await userData
 
@@ -21,7 +22,9 @@ export async function generateMetadata({ params: { userId } }: Params): Promise<
 
 }
 
-export default async function UserPage({ params: { userId } }: Params) {
+export default async function UserPage({ params }: Params) {
+    const { userId } = await params;
+
     const userData: Promise<User> = getUser(userId)
     const userPostsData: Promise<Post[]> = getUserPosts(userId)
 
@@ -38,4 +41,12 @@ export default async function UserPage({ params: { userId } }: Params) {
             </Suspense>
         </>
     )
+}
+//static site generation
+export async function generateStaticParams() {
+    const userData: Promise<User[]> = getAllUsers();
+    const users = await userData
+    return users.map(user => ({
+        userId: user.id.toString()
+    }))
 }
